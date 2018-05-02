@@ -274,8 +274,15 @@ def main():
                 for bidx, baseline in enumerate(calibrator.baselines):
                     est_baselines.append( sm.Transformation(baseline.T()) )
                 T_tc_guess = graph.getTargetPoseGuess(timestamp, cameraList, est_baselines)
-
                 success = calibrator.addTargetView(obs_tuple, T_tc_guess)
+
+                #calibration progress
+                progress.sample()
+
+                if not success:
+                    # the state of things may not be valid, hence cannot  go on
+                    continue
+                
                 #display process
                 if (verbose or (view_id % 25) == 0) and calibrator.estimator.getNumBatches()>0 and view_id>1:
                     print
@@ -287,11 +294,9 @@ def main():
                     print
                     print "------------------------------------------------------------------"
                     
-                #calibration progress
-                progress.sample()
                 
                 #plot added views
-                if success and doPlot:
+                if doPlot:
                     recent_view = calibrator.views[-1]
                     cams_in_view = [obs_tuple[0] for obs_tuple in recent_view.rig_observations]
                     plotter = PlotCollection.PlotCollection("Added view (stamp: {0})".format(timestamp))
@@ -304,7 +309,7 @@ def main():
                 # Look for outliers
                 runEndFiltering = view_id==(len(timestamps)-1) and parsed.allowEndFiltering # run another filtering step at the end (over all batches)
                 numActiveBatches = calibrator.estimator.getNumBatches()
-                if ((success and numActiveBatches>parsed.minViewOutlier*numCams) or (runEndFiltering and numActiveBatches>parsed.minViewOutlier*numCams)) and parsed.removeOutliers: 
+                if ((numActiveBatches>parsed.minViewOutlier*numCams) or (runEndFiltering and numActiveBatches>parsed.minViewOutlier*numCams)) and parsed.removeOutliers:
                     #create the list of the batches to check               
                     if initOutlierRejection:
                         #check all views after the min. number of batches has been reached
