@@ -286,7 +286,11 @@ class CameraCalibration(object):
     def addTargetView(self, rig_observations, T_tc_guess, force=False):
         #create the problem for this batch and try to add it 
         batch_problem = CalibrationTargetOptimizationProblem.fromTargetViewObservations(self.cameras, self.target, self.baselines, T_tc_guess, rig_observations, useBlakeZissermanMest=self.useBlakeZissermanMest)
-        self.estimator_return_value = self.estimator.addBatch(batch_problem, force)
+        try:
+            self.estimator_return_value = self.estimator.addBatch(batch_problem, force)
+        except Exception, e:
+            sm.logDebug("The estimator did not accept this batch")
+            return False
         
         if self.estimator_return_value.numIterations >= self.optimizerOptions.maxIterations:
             sm.logError("Did not converge in maxIterations... restarting...")
@@ -610,11 +614,10 @@ def printParameters(cself, dest=sys.stdout):
         
         #reproj error statistics
         corners, reprojs, rerrs = getReprojectionErrors(cself, cidx) 
-        
-        if len(rerrs)>0 and rerrs.count(None)!= len(rerrs):
+        try:
             me, se = getReprojectionErrorStatistics(rerrs)
             print >> dest, "\t reprojection error: [%f, %f] +- [%f, %f]" % (me[0], me[1], se[0], se[1])
-        else:
+        except:
             print "No error data for cam{0}".format(cidx)
 
         print >> dest
