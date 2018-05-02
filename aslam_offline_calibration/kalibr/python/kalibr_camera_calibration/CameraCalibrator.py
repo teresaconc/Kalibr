@@ -288,7 +288,7 @@ class CameraCalibration(object):
         batch_problem = CalibrationTargetOptimizationProblem.fromTargetViewObservations(self.cameras, self.target, self.baselines, T_tc_guess, rig_observations, useBlakeZissermanMest=self.useBlakeZissermanMest)
         try:
             self.estimator_return_value = self.estimator.addBatch(batch_problem, force)
-        except Exception, e:
+        except:
             sm.logDebug("The estimator did not accept this batch")
             return False
         
